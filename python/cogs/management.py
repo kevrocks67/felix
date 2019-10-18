@@ -7,7 +7,6 @@ Commands:
     unload          unload an extension / cog
     reload          reload an extension / cog
     cogs            show currently active extensions / cogs
-    activity        set the bot's status message
     list            make felix compute a list
      └duplicates        find duplicate usernames
 
@@ -262,7 +261,7 @@ class Management(commands.Cog, name='Management'):
     )
     async def reload_extension(self, ctx, extension_name):
         target_extensions = []
-        if 'all' in extension_name:
+        if extension_name == 'all':
             target_extensions = [__name__] + \
                 [x for x in self.client.extensions if not x == __name__]
         else:
@@ -301,42 +300,6 @@ class Management(commands.Cog, name='Management'):
         response += ['\n[Unloaded extensions]'] + \
             ['\n  ' + x for x in unloaded]
         await ctx.send(f'```css{"".join(response)}```')
-        return True
-
-    # ----------------------------------------------
-    # Function to set the bot's status message
-    # ----------------------------------------------
-    @commands.command(
-        name='activity',
-        brief='Set Bot activity',
-        description='Set Bot activity.\n\n'
-        + 'Available activities:\n'
-        + '  playing, streaming, listening, watching.\n\n'
-        + 'Example activities:\n'
-        + '    playing [game],\n'
-        + '    streaming [linkToStream] [game],\n'
-        + '    listening [music],\n'
-        + '    watching [movie]',
-        hidden=True,
-    )
-    async def change_activity(self, ctx, *activity: str):
-        if not activity:
-            await self.client.change_presence(activity=None)
-            return
-        activities = ['playing', 'streaming', 'listening', 'watching']
-        text_split = ' '.join(activity).split(' ')
-        _activity = text_split.pop(0).lower()
-        if _activity not in activities:
-            return False
-        _type = activities.index(_activity)
-        if _type == 1:
-            _url = text_split.pop(0)
-        else:
-            _url = None
-        _name = ' '.join(text_split)
-        await self.client.change_presence(
-            activity=Activity(name=_name, url=_url, type=_type)
-        )
         return True
 
     # ----------------------------------------------

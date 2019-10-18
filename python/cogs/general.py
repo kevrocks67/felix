@@ -114,8 +114,8 @@ class General(commands.Cog, name='General'):
             await msg.channel.send('hello')
 
         if re.search(
-                r'(?i)^felix should (i|he|she|they|we|@*)',
-                msg.content
+            r'(?i)^felix should (i|he|she|they|we|@*)',
+            msg.content
         ):
             if random.random() >= 0.5:
                 response = 'the answer I am getting from my entropy is: Yes.'
@@ -203,6 +203,17 @@ class General(commands.Cog, name='General'):
 
     # ------------------------------------------------------------------------
 
+    @commands.command(
+        name='stackoverflow',
+        aliases=['stacko', 'stack']
+    )
+    async def stackoverflow(self, ctx, *, search_text):
+        """Post a stackoverflow search link"""
+        await ctx.trigger_typing()
+        await ctx.send(
+            f'here you go! <https://stackoverflow.com/?q={quote(search_text)}>'
+        )
+
     @commands.group(
         name="howto",
         invoke_without_command=True,
@@ -283,6 +294,42 @@ class General(commands.Cog, name='General'):
 
         e = Embed(title='I can run code',
                   description=run_instructions,
+                  color=0x2ECC71)
+        await ctx.send(embed=e)
+
+    @howto.command(
+        name='font',
+        aliases=['format', 'formatting', 'write']
+    )
+    async def font_format(self, ctx):
+        """Instructions on how to format your text"""
+        font_instructions = (
+            "Discord supports font formatting with the following options:\n"
+            "*italics*\u1160 \u1160 \u1160 \u1160\u1160\u1160\u1160"
+            "\\*italics\\* | \\_italics\\_\n"
+            "**bold**\u1160 \u1160 \u1160 \u1160 \u1160 \u1160\u1160"
+            "\\*\\*bold\\*\\*\n"
+            "***bold italics***\u1160 \u1160 \u1160\u1160\u1160"
+            "\\*\\*\\*bold italics\\*\\*\\*\n"
+            "__underline__\u1160 \u1160\u1160\u1160\u1160\u1160"
+            "\\_\\_underline\\_\\_\n"
+            "__*underline italics*__\u1160 \u1160 \u1160 "
+            "\\_\\_\\*underline italics\\*\\_\\_\n"
+            "__**underline bold**__\u1160\u1160\u1160\u1160"
+            "\\_\\_\\*\\*underline bold\\*\\*\\_\\_\n"
+            "__***underline bold italics***__\u1160 "
+            "\\_\\_\\*\\*\\*underline bold italics\\*\\*\\*\\_\\_\n"
+            "~~strikethrough~~\u1160 \u1160 \u1160 \u1160"
+            "\\~\\~strikethrough\\~\\~\n"
+        )
+        link = (
+            'https://support.discordapp.com/hc/en-us/articles/'
+            '210298617-Markdown-Text-101-Chat-Formatting-Bold-Italic-Underline-'
+        )
+
+        e = Embed(title='Font Formatting',
+                  url=link,
+                  description=font_instructions,
                   color=0x2ECC71)
         await ctx.send(embed=e)
 

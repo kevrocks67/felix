@@ -19,7 +19,6 @@ class Stream(commands.Cog, name='Stream'):
         self.LIVE_CHAT_ID = None
         self.staging_ch = None
         self.questions_ch = None
-        self.answered_ch = None
         self.PREFIXES = ['q ', 'question ', 'q:', 'question:']
         self.staged_questions = dict()
         self.forwarded_questions = dict()
@@ -58,10 +57,8 @@ class Stream(commands.Cog, name='Stream'):
             return json.dump(state, statefile, indent=1)
 
     def set_up_api(self, credentials):
-        api_service_name = "youtube"
-        api_version = "v3"
         self.youtube_api = googleapiclient.discovery.build(
-            api_service_name, api_version, credentials=credentials
+            serviceName="youtube", version="v3", credentials=credentials
         )
         return True
 
@@ -103,8 +100,7 @@ class Stream(commands.Cog, name='Stream'):
         old_question = self.staged_questions[question_id]
         e = old_question.embeds[0]
         question = await self.questions_ch.send(embed=e)
-        await question.add_reaction('✅')
-        await question.add_reaction('⛔')
+        await question.add_reaction('❌')
         self.forwarded_questions[question.id] = question
         await old_question.delete()
         self.staged_questions.pop(old_question.id)
@@ -112,22 +108,14 @@ class Stream(commands.Cog, name='Stream'):
 
     async def finish_question(self, question_id):
         old_question = self.forwarded_questions[question_id]
-        e = old_question.embeds[0]
-        await self.answered_ch.send(embed=e)
         await old_question.delete()
         self.forwarded_questions.pop(old_question.id)
         return True
 
-    async def drop_staged_question(self, question_id):
+    async def drop_question(self, question_id):
         old_question = self.staged_questions[question_id]
         await old_question.delete()
         self.staged_questions.pop(old_question.id)
-        return True
-
-    async def drop_forwarded_question(self, question_id):
-        old_question = self.forwarded_questions[question_id]
-        await old_question.delete()
-        self.forwarded_questions.pop(old_question.id)
         return True
 
     # ----------------------------------------------
@@ -140,19 +128,17 @@ class Stream(commands.Cog, name='Stream'):
         emoji = reaction.emoji
         msg = reaction.message
         msg_id = msg.id
-        if msg.id in self.reaction_in_progress:
+        if msg_id in self.reaction_in_progress:
             return
-        self.reaction_in_progress.add(msg.id)
+        self.reaction_in_progress.add(msg_id)
         if msg_id in self.staged_questions:
             if emoji == '✅':
                 await self.forward_question(msg_id)
             elif emoji == '⛔':
-                await self.drop_staged_question(msg_id)
+                await self.drop_question(msg_id)
         elif msg_id in self.forwarded_questions:
-            if emoji == '✅':
+            if emoji == '❌':
                 await self.finish_question(msg_id)
-            elif emoji == '⛔':
-                await self.drop_forwarded_question(msg_id)
         self.reaction_in_progress.remove(msg_id)
 
     # ----------------------------------------------
@@ -207,7 +193,7 @@ class Stream(commands.Cog, name='Stream'):
         name='setup',
     )
     async def stream_setup(self, ctx):
-        """Setup the 'staging', 'question', and 'archive' channel"""
+        """Setup the 'staging' and 'question' channel"""
         channel = ctx.channel
         caller = ctx.author
 
@@ -229,22 +215,14 @@ class Stream(commands.Cog, name='Stream'):
                 timeout=60
             )
 
-            await channel.send('Please specify the "Archive" channel ID')
-            answered_msg = await self.client.wait_for(
-                'message',
-                check=check,
-                timeout=60
-            )
-
         except asyncio.TimeoutError:
             await channel.send(f'TIMEOUT - Setup Cancelled')
             return
 
         staging_id = int(staging_msg.content)
         questions_id = int(questions__msg.content)
-        answered_id = int(answered_msg.content)
 
-        stream_channels = [staging_id, questions_id, answered_id]
+        stream_channels = [staging_id, questions_id]
         self.save_stream_channels(stream_channels)
         await ctx.send('Setup Successful - question channels saved')
 
@@ -268,7 +246,6 @@ class Stream(commands.Cog, name='Stream'):
 
         self.staging_ch = self.client.get_channel(stream_channels[0])
         self.questions_ch = self.client.get_channel(stream_channels[1])
-        self.answered_ch = self.client.get_channel(stream_channels[2])
 
         request = self.youtube_api.liveBroadcasts().list(
             part="snippet",
@@ -311,18 +288,26 @@ class Stream(commands.Cog, name='Stream'):
             if not msg_type == 'textMessageEvent':
                 continue
             message_text = msg['snippet']['textMessageDetails']['messageText']
-            if not any(message_text.lower().startswith(pref) for pref in self.PREFIXES):
+            prefix_len = 0
+            for prefix in self.PREFIXES:
+                if message_text.lower().startswith(prefix):
+                    prefix_len = len(prefix)
+                    break
+            if not prefix_len:
                 continue
             message_date_str = msg['snippet']['publishedAt']
             message_date = datetime.fromisoformat(message_date_str[:-1])
             if message_date <= self.check_date:
                 continue
             self.check_date = message_date
-            # message_id = msg['id']
             author_name = msg['authorDetails']['displayName']
             author_image = msg['authorDetails']['profileImageUrl']
 
-            await self.stage_question(message_text, author_name, author_image)
+            await self.stage_question(
+                message_text[prefix_len:],
+                author_name,
+                author_image
+            )
     # ----------------------------------------------
 
     def cog_unload(self):
