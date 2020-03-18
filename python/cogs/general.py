@@ -7,7 +7,8 @@ Commands:
     howto           make the bot post tutorials
      ├ codeblocks       how to send discord markdown codeblocks
      ├ ask              how to ask question on the server
-     └ run              how to use felix run
+     ├ run              how to use felix run
+     └ sticker          how to apply EM's stickers
     links           make the bot post links to the engineerman github pages
     memberinfo      provide information about the given member
     question        ask a question which the bot will answer using wolframalpha
@@ -18,6 +19,7 @@ Commands:
 
 import random
 import re
+import typing
 from datetime import datetime as dt
 from urllib.parse import quote
 from discord.ext import commands
@@ -333,6 +335,32 @@ class General(commands.Cog, name='General'):
                   color=0x2ECC71)
         await ctx.send(embed=e)
 
+    @howto.command(
+        name='sticker',
+        aliases=['stickers', 'apply-stickers']
+    )
+    async def sticker(self, ctx):
+        """Show help with applying stickers"""
+        sticker_instructions = (
+            "To ensure your sticker will hold on for a while, we have to"
+            " prepare the surface of the device. Get a paper towel or rag and "
+            "rubbing alcohol or glass cleaner. Apply a bit of your cleaner of your "
+            "choice and clean of any dust, fingerprints and smudges. Then grab new "
+            "paper towel any dry the surface. \n"
+            "Get your sticker and **peel off the back the side**, line your sticker "
+            "and press the sticker against the surface. Try to get air pockers out "
+            "sticker. Now peel off the front side carefully while checking no letters"
+            " have sticked on the front peel. \n And boom, you are done."
+            "\n\n**Getting EM stickers**\n"
+            "EngineerMan\'s stickers are limited edition, he usually announces when "
+            "new batch is coming out. Stay tuned for more stickers coming out soon."
+
+        )
+        e = Embed(title='Applying stickers',
+                  description=sticker_instructions,
+                  color=0x2ECC71)
+        await ctx.send(embed=e)
+
     @commands.command(
         name='links',
         aliases=['urls', 'sauce', 'source'],
@@ -411,8 +439,10 @@ class General(commands.Cog, name='General'):
         name='memberinfo',
         aliases=['member']
     )
-    async def memberinfo(self, ctx, member: Member):
+    async def memberinfo(self, ctx, member: Member = None):
         """Provides information about the given member."""
+        if not member:
+            member = ctx.author
         url = 'https://emkc.org/api/v1/stats/discord/messages'
         params = [('discord_id', member.id)]
         async with self.client.session.get(url, params=params) as r:
@@ -570,10 +600,10 @@ class General(commands.Cog, name='General'):
         name='weather'
     )
     async def weather(
-            self, ctx,
-            location: str,
-            days: int = 0,
-            units: str = 'm',
+        self, ctx,
+        location: str,
+        days: typing.Optional[int] = 0,
+        units: typing.Optional[str] = 'm',
     ):
         """Get the current weather/forecast in a location
 "
@@ -592,6 +622,11 @@ class General(commands.Cog, name='General'):
           \u1160**units** (m/u/mM/uM): m = Metric | u = US | M = wind in M/s
 
           API used: https://en.wttr.in/:help"""
+        if units not in ["m", "u", "mM", "uM"]:
+            location = f"{location} {units}"
+            units = "m"
+        location = location.replace('.png', '')
+        moon = location.startswith('moon')
         url = (
             'https://wttr.in/'
             f'{location}?{units}{days}{"" if days else "q"}nTAF'
@@ -599,7 +634,7 @@ class General(commands.Cog, name='General'):
         async with self.client.session.get(url) as response:
             weather = await response.text()
             weather = weather.split('\n')
-        if 'Sorry' in weather[0] or weather[1]:
+        if 'Sorry' in weather[0] or (weather[1] and not moon):
             return
         if days:
             weather = [weather[0]]+weather[7:]

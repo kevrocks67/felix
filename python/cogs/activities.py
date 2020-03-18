@@ -20,10 +20,10 @@ HOLIDAY_DICT = {
     "0704": "watching freedom fireworks 🎇",
     "0817": "playing it's my Birthday 🎂",
     "1003": "watching people being united 🍺",
+    "1109": "watching walls crumble 🧱",
     "1224": "watching christmas trees 🎄",
     "1225": "watching christmas trees 🎄",
     "1231": "watching fireworks 🎆",
-    "1009": "watching Hacktoberfest 🍺",
 }
 
 
@@ -72,6 +72,8 @@ class ActivityMgmt(commands.Cog, name='Activity Management'):
         if _activity not in activities:
             return False
         _type = activities.index(_activity)
+        if _type == 2 and text_split[0].lower() == 'to':
+            del text_split[0]
         if _type == 1:
             _url = text_split.pop(0)
         else:

@@ -5,7 +5,7 @@ Felix Discord Bot
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
-* **Python 3.7** or higher
+* **Python 3.8.1** or higher
 
 ### Installing
 #### without docker
@@ -29,7 +29,7 @@ docker-compose up
 ```
 
 ### Creating your own python bot extension (cog)
-This bot uses the `discord.py API wrapper` (https://rapptz.github.io/discord.py/docs/index.html)
+This bot uses the `discord.py API wrapper` (https://discordpy.readthedocs.io/en/latest/)
 
 You can create new bot commands or tasks by creating your own extension/cog.
 
@@ -37,7 +37,7 @@ You can create new bot commands or tasks by creating your own extension/cog.
 If you want to contribute to Felix you can just submit a pull request.
 #### Code styling / IDE Settings
 Please style your code according to these guidelines when writing python code for Felix:
-* maximum line length is 80 columns 
+* maximum line length is 99 columns 
 * use 4 spaces for indentation
 * files end with a newline 
 * lines should not have trailing whitespace
@@ -48,7 +48,7 @@ Example config for VSCode:
 ```
 "[python]": {
     "editor.rulers": [
-        80
+        99
     ],
     "editor.tabSize": 4,
 },
@@ -56,6 +56,7 @@ Example config for VSCode:
 "files.trimTrailingWhitespace": true,
 "editor.trimAutoWhitespace": true,
 "python.formatting.provider": "autopep8",
+"python.formatting.autopep8Args": ["--max-line-length", "99"],
 ```
 
 You can visit us on our discord: https://discord.gg/engineerman

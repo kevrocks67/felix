@@ -411,16 +411,16 @@ class Management(commands.Cog, name='Management'):
 
     @error.command(
         name='clear',
+        aliases=['delete'],
     )
-    async def error_clear(self, ctx, n=None):
-        """Clear the oldest [n] errors from the error log (0 = all errors)"""
-        if not n:
+    async def error_clear(self, ctx, n: int = None):
+        """Clear error with index [n]"""
+        if n is None:
             self.client.last_errors = []
             await ctx.send('Error log cleared')
         else:
-            for _ in range(n):
-                self.client.last_errors.pop(0)
-            await ctx.send(f'Deleted the {n} oldest messages ')
+            self.client.last_errors.pop(n)
+            await ctx.send(f'Deleted error #{n}')
 
     @error.command(
         name='traceback',
@@ -458,7 +458,17 @@ class Management(commands.Cog, name='Management'):
             response.append(f'`Channel:{error_ctx.channel.name}`')
         else:
             response.append('`Error happened outside of command`')
-        response.append(f'```python\n{tb}```')
+        response.append(f'```python\n')
+        num_chars = sum(len(line) for line in response)
+        for line in tb.split('\n'):
+            num_chars += len(line)
+            response.append(line)
+            if num_chars > 1900:
+                response.append('```')
+                await ctx.send('\n'.join(response))
+                response = ['```python\n']
+                num_chars = 0
+        response.append('```')
         await ctx.send('\n'.join(response))
 
 
